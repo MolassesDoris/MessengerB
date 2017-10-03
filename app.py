@@ -1,7 +1,7 @@
 # EAAHKlA4PzIABAIpdIctX2mL19yEJl67ntOEu1m2BwXfIYCwB1uVKZCRzRZCWZCugqTb5i555ARBaoPiZBZCJG7W1wiwTyn9eKcx1b767bazSSeAZCBsmacITxhV6TAdZC82qHpv0VZC0ZCMWyr1dBYKpJiZCp7VqEWj10zjrWbwTiyltfd7UWoo8WQ
 # https://pythontips.com/2017/04/13/making-a-reddit-facebook-messenger-bot/
 #  praw.Reddit(client_id = '8jBSydMLLF6uvg', client_secret = '3w8bcqu7FYTpGJNCm3oQILV7DtM'
-
+import os
 from flask import Flask, request
 import json
 import requests
@@ -20,6 +20,11 @@ reddit = praw.Reddit(client_id='8jBSydMLLF6uvg',
                      username='LowCholestoralMemes')
 
 PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
+quick_replies_list = [{
+    "content_type":"text",
+    "title":"Meme",
+    "payload":"meme",}
+]
 
 @app.route('/', methods=['GET'])
 def handle_verification():
@@ -60,20 +65,70 @@ def messaging_events(payload):
 def send_message(token, recipient, text):
     """Send the message text to recipient with id recipient.
     """
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-                      params={"access_token": token},
-                      data=json.dumps({
-                          "recipient": {"id": recipient},
-                          "message": {"text": text.decode('unicode_escape')}
-                      }),
-                      headers={'Content-type': 'application/json'})
-    if r.status_code != requests.codes.ok:
-        print(r.text)
 
-relationship_table = db.Table('relationship_table,
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id').nullable = False),
+    if("meme" in text.lower()):
+        subreddit_name = "memeeconomy"
+    else:
+        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+                          params={"access_token": token},
+                          data=json.dumps({
+                              "recipient": {"id": recipient},
+                              "message": {"text": text.decode('unicode_escape')}
+                          }),
+                          headers={'Content-type': 'application/json'})
+        if r.status_code != requests.codes.ok:
+            print(r.text)
+    myUser = sessionhandle(db.session, Users, name = recipient)
+
+    if(subreddit_name == "memeeconomy"):
+        for submission in reddit.subreddit(subreddit_name).hot(limit=None):
+            if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
+                query_result = Posts.query.filter(Posts.name == submission.id).first()
+                if query_result is None:
+                    myPost = Posts(submission.id, submission.url)
+                    myUser.posts.append(myPost)
+                    db.session.commit()
+                    payload = submission.url
+                    break
+                elif myUser not in query_result.users:
+                    myUser.posts.append(query_result)
+                    db.session.commit()
+                    payload = submission.url
+                    break
+                else:
+                    continue
+
+        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+            params={"access_token": token},
+            data=json.dumps({
+                "recipient": {"id": recipient},
+                "message": {"attachment": {
+                              "type": "image",
+                              "payload": {
+                                "url": payload
+                              }},
+                              "quick_replies":quick_replies_list}
+            }),
+            headers={'Content-type': 'application/json'})
+
+        if r.status_code != requests.codes.ok:
+            print(r.text)
+def sessionhandle(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    # we check the users or posts model and filter and return the instance of the session
+    # if that item is not in the model then we add
+    if instance:
+        return instance
+    else:
+        instance = model(**kwargs)
+        session.add(instance)
+        session.commit()
+        return instance
+
+relationship_table=db.Table('relationship_table',
+    db.Column('user_id', db.Integer,db.ForeignKey('users.id'), nullable=False),
     db.Column('post_id',db.Integer,db.ForeignKey('posts.id'),nullable=False),
-    db.PrimaryKeyConstraint('user_id', 'post_id') )
+    db.PrimaryKeyConstraint('user_id', 'post_id'))
 
 class Users(db.Model):
     id = db.column(db.Integer, primary_key = True)
