@@ -23,7 +23,12 @@ PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j
 quick_replies_list = [{
     "content_type":"text",
     "title":"Meme",
-    "payload":"meme",}
+    "payload":"meme",},{
+
+    "content_type":"text",
+    "title":"meirl",
+    "payload":"meirl",
+    }
 ]
 
 @app.route('/', methods=['GET'])
@@ -48,7 +53,7 @@ def handle_messages():
     return("ok")
 
 def messaging_events(payload):
-    """Generate tuples of (sender_id, message_text) from the
+    """Generate tuples of (sender_id, message_text) from theLowCholestoralMemes
     provided payload.
     """
     data = json.loads(payload)
@@ -67,51 +72,43 @@ def send_message(token, recipient, text):
     subreddit_name =""
     if("meme" in str(text.lower())):
         subreddit_name = "memeeconomy"
-    else:
-        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-                          params={"access_token": token},
-                          data=json.dumps({
-                              "recipient": {"id": recipient},
-                              "message": {"text": text.decode('unicode_escape')}
-                          }),
-                          headers={'Content-type': 'application/json'})
-        if r.status_code != requests.codes.ok:
-            print(r.text)
+    elif("meirl" in str(text.lower() or "irl" in str(text.lower()))):
+        subreddit_name = "meirl"
+
     myUser = sessionhandle(db.session, Users, name = recipient)
 
-    if(subreddit_name == "memeeconomy"):
-        for submission in reddit.subreddit(subreddit_name).hot(limit=None):
-            if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
-                query_result = Posts.query.filter(Posts.name == submission.id).first()
-                if query_result is None:
-                    myPost = Posts(submission.id, submission.url)
-                    myUser.posts.append(myPost)
-                    db.session.commit()
-                    payload = submission.url
-                    break
-                elif myUser not in query_result.users:
-                    myUser.posts.append(query_result)
-                    db.session.commit()
-                    payload = submission.url
-                    break
-                else:
-                    continue
+    for submission in reddit.subreddit(subreddit_name).hot(limit=None):
+        if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
+            query_result = Posts.query.filter(Posts.name == submission.id).first()
+            if query_result is None:
+                myPost = Posts(submission.id, submission.url)
+                myUser.posts.append(myPost)
+                db.session.commit()
+                payload = submission.url
+                break
+            elif myUser not in query_result.users:
+                myUser.posts.append(query_result)
+                db.session.commit()
+                payload = submission.url
+                break
+            else:
+                continue
 
-        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-            params={"access_token": token},
-            data=json.dumps({
-                "recipient": {"id": recipient},
-                "message": {"attachment": {
-                              "type": "image",
-                              "payload": {
-                                "url": payload
-                              }},
-                              "quick_replies":quick_replies_list}
-            }),
-            headers={'Content-type': 'application/json'})
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+        params={"access_token": token},
+        data=json.dumps({
+            "recipient": {"id": recipient},
+            "message": {"attachment": {
+                          "type": "image",
+                          "payload": {
+                            "url": payload
+                          }},
+                          "quick_replies":quick_replies_list}
+        }),
+        headers={'Content-type': 'application/json'})
 
-        if r.status_code != requests.codes.ok:
-            print(r.text)
+    if r.status_code != requests.codes.ok:
+        print(r.text)
 def sessionhandle(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     # we check the users or posts model and filter and return the instance of the session
