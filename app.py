@@ -1,4 +1,4 @@
-# EAAHKlA4PzIABAADBh6uhh6IFlFG8r1nyFxNFL9bSuzDEnwSmkL2iBwEsF1dp4dduQIljLqbQzMXZBavDUJ6PcUCY7Rwh4zUeVC2UZALcHcaM41ZCzVXHeCHXadgtkBBkh0X1ZCK1ymvJhXI1TIkh79mRPBKlBrMpZBpbZAmpzSh67XwUxdSoJU
+# EAAHKlA4PzIABAIpdIctX2mL19yEJl67ntOEu1m2BwXfIYCwB1uVKZCRzRZCWZCugqTb5i555ARBaoPiZBZCJG7W1wiwTyn9eKcx1b767bazSSeAZCBsmacITxhV6TAdZC82qHpv0VZC0ZCMWyr1dBYKpJiZCp7VqEWj10zjrWbwTiyltfd7UWoo8WQ
 # https://pythontips.com/2017/04/13/making-a-reddit-facebook-messenger-bot/
 
 from flask import Flask, request
@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # This needs to be filled with the Page Access Token that will be provided
 # by the Facebook App that will be created.
-PAT = ''
+PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
 
 @app.route('/', methods=['GET'])
 def handle_verification():
