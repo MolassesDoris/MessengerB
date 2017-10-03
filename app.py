@@ -1,33 +1,60 @@
-# EAAHKlA4PzIABAIpdIctX2mL19yEJl67ntOEu1m2BwXfIYCwB1uVKZCRzRZCWZCugqTb5i555ARBaoPiZBZCJG7W1wiwTyn9eKcx1b767bazSSeAZCBsmacITxhV6TAdZC82qHpv0VZC0ZCMWyr1dBYKpJiZCp7VqEWj10zjrWbwTiyltfd7UWoo8WQ
-# https://pythontips.com/2017/04/13/making-a-reddit-facebook-messenger-bot/
-
 from flask import Flask, request
 import json
 import requests
+from flask_sqlalchemy import SQLAlchemy
+import os
+import praw
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+db = SQLAlchemy(app)
+reddit = praw.Reddit(client_id='8jBSydMLLF6uvg',
+                     client_secret='3w8bcqu7FYTpGJNCm3oQlLV7DtM',
+                     password='memesgalore',
+                     user_agent='my user agent',
+                     username='LowCholestoralMemes')
 
-# This needs to be filled with the Page Access Token that will be provided
-# by the Facebook App that will be created.
 PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
 
+
+quick_replies_list = [{
+    "content_type":"text",
+    "title":"Meme",
+    "payload":"meme",
+},
+{
+    "content_type":"text",
+    "title":"Motivation",
+    "payload":"motivation",
+},
+{
+    "content_type":"text",
+    "title":"Shower Thought",
+    "payload":"Shower_Thought",
+},
+{
+    "content_type":"text",
+    "title":"Jokes",
+    "payload":"Jokes",
+}
+]
 @app.route('/', methods=['GET'])
 def handle_verification():
-    print("Handling Verification.")
-    if request.args.get('hub.verify_token') == 'my_voice_is_my_password_verify_me':
-        print("Verification successful!")
-        return(request.args.get('hub.challenge'))
+    print "Handling Verification."
+    if request.args.get('hub.verify_token', '') == 'my_voice_is_my_password_verify_me':
+        print "Verification successful!"
+        return request.args.get('hub.challenge', '')
     else:
-        print("Verification failed!")
-        return('Error, wrong validation token')
+        print "Verification failed!"
+        return 'Error, wrong validation token'
 
 @app.route('/', methods=['POST'])
 def handle_messages():
-    print("Handling Messages")
+    print "Handling Messages"
     payload = request.get_data()
-    print(payload)
+    print payload
     for sender, message in messaging_events(payload):
-        print("Incoming from %s: %s" % (sender, message))
+        print "Incoming from %s: %s" % (sender, message)
         send_message(PAT, sender, message)
     return "ok"
 
@@ -47,15 +74,147 @@ def messaging_events(payload):
 def send_message(token, recipient, text):
     """Send the message text to recipient with id recipient.
     """
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-                      params={"access_token": token},
-                      data=json.dumps({
-                          "recipient": {"id": recipient},
-                          "message": {"text": text.decode('unicode_escape')}
-                      }),
-                      headers={'Content-type': 'application/json'})
+    if "meme" in text.lower():
+        subreddit_name = "memes"
+    elif "shower" in text.lower():
+        subreddit_name = "Showerthoughts"
+    elif "joke" in text.lower():
+        subreddit_name = "Jokes"
+    else:
+        subreddit_name = "GetMotivated"
+
+    myUser = get_or_create(db.session, Users, name=recipient)
+
+    if subreddit_name == "Showerthoughts":
+        for submission in reddit.subreddit(subreddit_name).hot(limit=None):
+            if (submission.is_self == True):
+                query_result = Posts.query.filter(Posts.name == submission.id).first()
+                if query_result is None:
+                    myPost = Posts(submission.id, submission.title)
+                    myUser.posts.append(myPost)
+                    db.session.commit()
+                    payload = submission.title
+                    break
+                elif myUser not in query_result.users:
+                    myUser.posts.append(query_result)
+                    db.session.commit()
+                    payload = submission.title
+                    break
+                else:
+                    continue
+
+        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+            params={"access_token": token},
+            data=json.dumps({
+                "recipient": {"id": recipient},
+                "message": {"text": payload,
+                            "quick_replies":quick_replies_list}
+            }),
+            headers={'Content-type': 'application/json'})
+
+    elif subreddit_name == "Jokes":
+        for submission in reddit.subreddit(subreddit_name).hot(limit=None):
+            if ((submission.is_self == True) and ( submission.link_flair_text is None)):
+                query_result = Posts.query.filter(Posts.name == submission.id).first()
+                if query_result is None:
+                    myPost = Posts(submission.id, submission.title)
+                    myUser.posts.append(myPost)
+                    db.session.commit()
+                    payload = submission.title
+                    payload_text = submission.selftext
+                    break
+                elif myUser not in query_result.users:
+                    myUser.posts.append(query_result)
+                    db.session.commit()
+                    payload = submission.title
+                    payload_text = submission.selftext
+                    break
+                else:
+                    continue
+
+        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+            params={"access_token": token},
+            data=json.dumps({
+                "recipient": {"id": recipient},
+                "message": {"text": payload}
+            }),
+            headers={'Content-type': 'application/json'})
+
+        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+            params={"access_token": token},
+            data=json.dumps({
+                "recipient": {"id": recipient},
+                "message": {"text": payload_text,
+                            "quick_replies":quick_replies_list}
+            }),
+            headers={'Content-type': 'application/json'})
+
+    else:
+        payload = "http://imgur.com/WeyNGtQ.jpg"
+        for submission in reddit.subreddit(subreddit_name).hot(limit=None):
+            if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
+                query_result = Posts.query.filter(Posts.name == submission.id).first()
+                if query_result is None:
+                    myPost = Posts(submission.id, submission.url)
+                    myUser.posts.append(myPost)
+                    db.session.commit()
+                    payload = submission.url
+                    break
+                elif myUser not in query_result.users:
+                    myUser.posts.append(query_result)
+                    db.session.commit()
+                    payload = submission.url
+                    break
+                else:
+                    continue
+
+        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+            params={"access_token": token},
+            data=json.dumps({
+                "recipient": {"id": recipient},
+                "message": {"attachment": {
+                              "type": "image",
+                              "payload": {
+                                "url": payload
+                              }},
+                              "quick_replies":quick_replies_list}
+            }),
+            headers={'Content-type': 'application/json'})
+
     if r.status_code != requests.codes.ok:
-        print(r.text)
+        print r.text
+
+def get_or_create(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if instance:
+        return instance
+    else:
+        instance = model(**kwargs)
+        session.add(instance)
+        session.commit()
+        return instance
+
+relationship_table=db.Table('relationship_table',
+    db.Column('user_id', db.Integer,db.ForeignKey('users.id'), nullable=False),
+    db.Column('post_id',db.Integer,db.ForeignKey('posts.id'),nullable=False),
+    db.PrimaryKeyConstraint('user_id', 'post_id') )
+
+class Users(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255),nullable=False)
+    posts=db.relationship('Posts', secondary=relationship_table, backref='users' )
+
+    def __init__(self, name=None):
+        self.name = name
+
+class Posts(db.Model):
+    id=db.Column(db.Integer, primary_key=True)
+    name=db.Column(db.String, unique=True, nullable=False)
+    url=db.Column(db.String, nullable=False)
+
+    def __init__(self, name=None, url=None):
+        self.name = name
+        self.url = url
 
 if __name__ == '__main__':
     app.run()
