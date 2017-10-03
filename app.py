@@ -65,7 +65,7 @@ def send_message(token, recipient, text):
     """Send the message text to recipient with id recipient.
     """
     subreddit_name =""
-    if("meme" in text.lower()):
+    if("meme" in str(text.lower())):
         subreddit_name = "memeeconomy"
     else:
         r = requests.post("https://graph.facebook.com/v2.6/me/messages",
