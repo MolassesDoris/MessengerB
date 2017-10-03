@@ -131,20 +131,21 @@ relationship_table=db.Table('relationship_table',
     db.PrimaryKeyConstraint('user_id', 'post_id'))
 
 class Users(db.Model):
-    id = db.column(db.Integer, primary_key = True)
-    name = db.column(db.String(255), nullable = False)
-    posts = db.relationship('Posts', secondary = relationship_table, backref='users')
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255),nullable=False)
+    posts=db.relationship('Posts', secondary=relationship_table, backref='users' )
 
-    def __init__(self, name):
+    def __init__(self, name=None):
         self.name = name
 
 class Posts(db.Model):
-    id = db.column(db.Integer, primary_key = True)
-    name = db.column(db.String(255),unique = True ,nullable = False)
-    url = db.column(db.String, nullable = False)
+    id=db.Column(db.Integer, primary_key=True)
+    name=db.Column(db.String, unique=True, nullable=False)
+    url=db.Column(db.String, nullable=False)
 
-    def __init__(self, name, url):
+    def __init__(self, name=None, url=None):
         self.name = name
         self.url = url
+
 if __name__ == '__main__':
     app.run()
