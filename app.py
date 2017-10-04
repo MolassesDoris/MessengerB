@@ -56,6 +56,7 @@ def handle_messages():
     payload = request.get_data()
     print(payload)
     for sender, message in messaging_events(payload):
+        greetings(PAT)
         print("Incoming from %s: %s" % (sender, message))
         mark_seen(sender, PAT)
         typing_on(sender, PAT)
@@ -148,13 +149,12 @@ def sessionhandle(session, model, **kwargs):
         session.commit()
         return instance
 
-@app.route('/', methods=['POST'])
-def greetings():
+def greetings(token):
     print("=============================")
     print("Handling Greetings")
     print("=============================")
     r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
-                      params={"access_token": PAT},
+                      params={"access_token": token},
                       data=json.dumps({
                           'setting_type': 'greeting',
                           'greeting': {
