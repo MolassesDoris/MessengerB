@@ -26,8 +26,8 @@ quick_replies_list = [{
     "payload":"meme",},{
 
     "content_type":"text",
-    "title":"meirl",
-    "payload":"meirl",
+    "title":"Doggos",
+    "payload":"dog",
     }
 ]
 
@@ -72,7 +72,7 @@ def send_message(token, recipient, text):
     subreddit_name =""
     if("meme" in str(text.lower())):
         subreddit_name = "memeeconomy"
-    elif("rarepuppers" in str(text.lower() or "dog" in str(text.lower()) or "puppers" in str(text.lower()))):
+    elif("rarepuppers" in str(text.lower()) or "dog" in str(text.lower()) or "puppers" in str(text.lower())):
         subreddit_name = "rarepuppers"
     else:
         print("Unknown Subreddit.")
