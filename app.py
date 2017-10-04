@@ -65,21 +65,21 @@ def messaging_events(payload):
             yield(event["sender"]["id"], "I can't echo this")
 
 
-
 def send_message(token, recipient, text):
     """Send the message text to recipient with id recipient.
     """
     subreddit_name =""
     if("meme" in str(text.lower())):
         subreddit_name = "memeeconomy"
-    elif("meirl" in str(text.lower() or "irl" in str(text.lower()))):
-        subreddit_name = "meirl"
+    elif("rarepuppers" in str(text.lower() or "dog" in str(text.lower()) or "puppers" in str(text.lower()))):
+        subreddit_name = "rarepuppers"
 
     myUser = sessionhandle(db.session, Users, name = recipient)
 
     for submission in reddit.subreddit(subreddit_name).hot(limit=None):
         if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
             query_result = Posts.query.filter(Posts.name == submission.id).first()
+            print(query_result)
             if query_result is None:
                 myPost = Posts(submission.id, submission.url)
                 myUser.posts.append(myPost)
