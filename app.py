@@ -57,7 +57,10 @@ def handle_messages():
     print(payload)
     for sender, message in messaging_events(payload):
         print("Incoming from %s: %s" % (sender, message))
+        mark_seen(sender, PAT)
+        typing_on(sender, PAT)
         send_message(PAT, sender, message)
+        typing_off(sender, PAT)
     return("ok")
 
 def messaging_events(payload):
@@ -145,6 +148,7 @@ def sessionhandle(session, model, **kwargs):
         session.commit()
         return instance
 
+@app.route('/', methods=['POST'])
 def greetings():
     print("=============================")
     print("Handling Greetings")
@@ -162,6 +166,38 @@ def greetings():
     if r.status_code != requests.codes.ok:
         print(r.text)
 
+def typing_on(recipient, token):
+    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
+    params={"access_token": PAT},
+    data=json.dumps({
+        "recipient": {"id": recipient},
+        "sender_action": {"typing_on"}
+    }),
+    headers={'Content-type': 'application/json'})
+    if r.status_code != requests.codes.ok:
+        print(r.text)
+
+def typing_off(recipient, token):
+    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
+    params={"access_token": PAT},
+    data=json.dumps({
+        "recipient": {"id": recipient},
+        "sender_action": {"typing_off"}
+    }),
+    headers={'Content-type': 'application/json'})
+    if r.status_code != requests.codes.ok:
+        print(r.text)
+
+def mark_seen(recipient, token):
+    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
+    params={"access_token": PAT},
+    data=json.dumps({
+        "recipient": {"id": recipient},
+        "sender_action": {"mark_seen"}
+    }),
+    headers={'Content-type': 'application/json'})
+    if r.status_code != requests.codes.ok:
+        print(r.text)
 
 relationship_table=db.Table('relationship_table',
     db.Column('user_id', db.Integer,db.ForeignKey('users.id'), nullable=False),
