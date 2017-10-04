@@ -167,11 +167,12 @@ def greetings():
         print(r.text)
 
 def typing_on(recipient, token):
+    print("Replying to {}".format(recipient))
     r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
     params={"access_token": PAT},
     data=json.dumps({
         "recipient": {"id": recipient},
-        "sender_action": {"typing_on"}
+        "sender_action": "typing_on"
     }),
     headers={'Content-type': 'application/json'})
     if r.status_code != requests.codes.ok:
@@ -182,18 +183,21 @@ def typing_off(recipient, token):
     params={"access_token": PAT},
     data=json.dumps({
         "recipient": {"id": recipient},
-        "sender_action": {"typing_off"}
+        "sender_action": "typing_off"
     }),
     headers={'Content-type': 'application/json'})
+    print("Replied to {}".format(recipient))
     if r.status_code != requests.codes.ok:
         print(r.text)
 
 def mark_seen(recipient, token):
+
+    print("Received message from {}".format(recipient))
     r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
     params={"access_token": PAT},
     data=json.dumps({
         "recipient": {"id": recipient},
-        "sender_action": {"mark_seen"}
+        "sender_action": "mark_seen"
     }),
     headers={'Content-type': 'application/json'})
     if r.status_code != requests.codes.ok:
