@@ -56,7 +56,7 @@ def handle_messages():
     payload = request.get_data()
     print(payload)
     for sender, message in messaging_events(payload):
-        greetings(PAT)
+        # greetings(PAT)
         print("Incoming from %s: %s" % (sender, message))
         mark_seen(sender, PAT)
         typing_on(sender, PAT)
@@ -158,7 +158,7 @@ def greetings(token):
                       data=json.dumps({
                           'setting_type': 'greeting',
                           'greeting': {
-                              'text': "Hi friend. I am MemeBot"
+                              'text': "Hi friend. I am MemeBot", "locale":"default"
                           }
                       }),
                       headers={'Content-type': 'application/json'})
@@ -166,6 +166,31 @@ def greetings(token):
     if r.status_code != requests.codes.ok:
         print(r.text)
 
+def get_started(token):
+    print("=============================")
+    print("Get Started")
+    print("=============================")
+
+    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings", params={"access_token": token},
+            data=json.dumps({
+            "setting_type": "call_to_actions",
+            "thread_state": "new_thread",
+            "call_to_actions": [{
+                "payload": "Hi, I send memes, pics of doggos etc. Just request and I shall send."
+            }]}),headers={'Content-type': 'application/json'})
+
+    if r.status_code != requests.codes.ok:
+            print(r.text)
+
+def hide_starting_button(self):
+        r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings", params={"access_token": token},
+                data=json.dumps({
+                "setting_type": "call_to_actions",
+                "thread_state": "new_thread",
+                }),headers={'Content-type': 'application/json'})
+
+        if r.status_code != requests.codes.ok:
+                print(r.text)
 def typing_on(recipient, token):
     print("Replying to {}".format(recipient))
     r = requests.post("https://graph.facebook.com/v2.6/me/messages",
