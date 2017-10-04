@@ -145,6 +145,21 @@ def sessionhandle(session, model, **kwargs):
         session.commit()
         return instance
 
+@app.route('/', methods=['POST'])
+def greetings():
+    headers = {
+    'Content-Type': 'application/json',
+    }
+
+    params = (
+        ('access_token', PAT),
+    )
+    data = '{\n  "setting_type":"greeting",\n  "greeting":{\n    "text":"Timeless memes for the masses."\n  }\n}'
+
+    r = requests.post('https://graph.facebook.com/v2.6/me/thread_settings', headers=headers, params=params, data=data)
+
+    if r.status_code != requests.codes.ok:
+        print(r.text)
 relationship_table=db.Table('relationship_table',
     db.Column('user_id', db.Integer,db.ForeignKey('users.id'), nullable=False),
     db.Column('post_id',db.Integer,db.ForeignKey('posts.id'),nullable=False),
