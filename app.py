@@ -113,7 +113,7 @@ def send_message(token, recipient, text):
                               "payload": {
                                 "url": payload
                               }},
-                              "quick_replies":qr}
+                              "quick_replies":qr.quick_replies_list}
             }),
             headers={'Content-type': 'application/json'})
 
