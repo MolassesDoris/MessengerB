@@ -35,7 +35,7 @@ quick_replies_list = [{
     },{
     "content_type":"text",
     "title":"Dank Christian Memes",
-    "payload":"DankChristianMemes",
+    "payload":"DankChristian",
     }
 ]
 
