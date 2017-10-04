@@ -103,7 +103,7 @@ def send_message(token, recipient, text):
                     break
                 else:
                     continue
-
+        print(qr)
         r = requests.post("https://graph.facebook.com/v2.6/me/messages",
             params={"access_token": token},
             data=json.dumps({
