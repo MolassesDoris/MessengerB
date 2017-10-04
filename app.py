@@ -168,8 +168,8 @@ def greetings():
 
 def typing_on(recipient, token):
     print("Replying to {}".format(recipient))
-    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
-    params={"access_token": PAT},
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+    params={"access_token": token},
     data=json.dumps({
         "recipient": {"id": recipient},
         "sender_action": "typing_on"
@@ -179,8 +179,8 @@ def typing_on(recipient, token):
         print(r.text)
 
 def typing_off(recipient, token):
-    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
-    params={"access_token": PAT},
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+    params={"access_token": token},
     data=json.dumps({
         "recipient": {"id": recipient},
         "sender_action": "typing_off"
@@ -193,8 +193,8 @@ def typing_off(recipient, token):
 def mark_seen(recipient, token):
 
     print("Received message from {}".format(recipient))
-    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
-    params={"access_token": PAT},
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+    params={"access_token": token},
     data=json.dumps({
         "recipient": {"id": recipient},
         "sender_action": "mark_seen"
