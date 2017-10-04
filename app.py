@@ -37,7 +37,7 @@ def handle_verification():
 
     if request.args.get('hub.verify_token') == 'my_voice_is_my_password_verify_me':
         print("Verification successful!")
-        print(" !!!!!!!!!!!!!!!!! HUB CHALLENGE!!!!!!!!!!!!!!!!"request.args.get('hub.challenge',''))
+        print(" !!!!!!!!!!!!!!!!! HUB CHALLENGE!!!!!!!!!!!!!!!!",request.args.get('hub.challenge',''))
         return(request.args.get('hub.challenge',''))
     else:
         print("Verification failed!")
