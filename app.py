@@ -8,8 +8,7 @@ import requests
 from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 import praw
-# This needs to be filled with the Page Access Token that will be provided
-# by the Facebook App that will be created.
+import Quick_replies as qr
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 db = SQLAlchemy(app)
@@ -20,24 +19,7 @@ reddit = praw.Reddit(client_id='8jBSydMLLF6uvg',
                      username='LowCholestoralMemes')
 
 PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
-quick_replies_list = [{
-    "content_type":"text",
-    "title":"Meme",
-    "payload":"meme",},{
 
-    "content_type":"text",
-    "title":"Doggos",
-    "payload":"dog",
-    },{
-    "content_type":"text",
-    "title":"BlackPeopleTwitter",
-    "payload":"BlackPeopleTwitter",
-    },{
-    "content_type":"text",
-    "title":"Dank Christian Memes",
-    "payload":"DankChristian",
-    }
-]
 
 @app.route('/', methods=['GET'])
 def handle_verification():
@@ -131,7 +113,7 @@ def send_message(token, recipient, text):
                               "payload": {
                                 "url": payload
                               }},
-                              "quick_replies":quick_replies_list}
+                              "quick_replies":qr}
             }),
             headers={'Content-type': 'application/json'})
 
