@@ -37,6 +37,7 @@ def handle_verification():
 
     if request.args.get('hub.verify_token') == 'my_voice_is_my_password_verify_me':
         print("Verification successful!")
+        print(" !!!!!!!!!!!!!!!!! HUB CHALLENGE!!!!!!!!!!!!!!!!"request.args.get('hub.challenge',''))
         return(request.args.get('hub.challenge',''))
     else:
         print("Verification failed!")
@@ -75,7 +76,7 @@ def send_message(token, recipient, text):
         subreddit_name = "rarepuppers"
 
     myUser = sessionhandle(db.session, Users, name = recipient)
-
+    print(subreddit_name)
     for submission in reddit.subreddit(subreddit_name).hot(limit=None):
         if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
             query_result = Posts.query.filter(Posts.name == submission.id).first()
