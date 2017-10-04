@@ -28,6 +28,15 @@ quick_replies_list = [{
     "content_type":"text",
     "title":"Doggos",
     "payload":"dog",
+    }{
+    "content_type":"text",
+    "title":"BlackPeopleTwitter",
+    "payload":"BlackPeopleTwitter",
+    }
+    {
+    "content_type":"text",
+    "title":"Dank Christian Memes",
+    "payload":"DankChristianMemes",
     }
 ]
 
@@ -37,7 +46,6 @@ def handle_verification():
 
     if request.args.get('hub.verify_token') == 'my_voice_is_my_password_verify_me':
         print("Verification successful!")
-        print(" !!!!!!!!!!!!!!!!! HUB CHALLENGE!!!!!!!!!!!!!!!!",request.args.get('hub.challenge',''))
         return(request.args.get('hub.challenge',''))
     else:
         print("Verification failed!")
@@ -74,6 +82,10 @@ def send_message(token, recipient, text):
         subreddit_name = "memeeconomy"
     elif("rarepuppers" in str(text.lower()) or "dog" in str(text.lower()) or "puppers" in str(text.lower())):
         subreddit_name = "rarepuppers"
+    elif("black") in str(text.lower()) or "blackpeople" in str(text.lower()):
+        subreddit_name = "blackpeopletwitter"
+    elif("christian") in str(text.lower()) or "dankchristian" in str(text.lower()):
+        subreddit_name = "dankchristianmemes"
     else:
         print("Unknown Subreddit.")
 
