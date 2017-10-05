@@ -12,7 +12,7 @@ quick_replies_list = [{
     "payload":"BlackPeopleTwitter",
     },{
     "content_type":"text",
-    "title":"Dank Christian Memes",
+    "title":"Dank Christian",
     "payload":"DankChristian",
     }
 ]

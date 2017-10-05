@@ -9,16 +9,17 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 import praw
 import Quick_replies as qr
+import Secret as s
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 db = SQLAlchemy(app)
-reddit = praw.Reddit(client_id='8jBSydMLLF6uvg',
-                     client_secret='3w8bcqu7FYTpGJNCm3oQlLV7DtM',
-                     password='memesgalore',
-                     user_agent='my user agent',
-                     username='LowCholestoralMemes')
+reddit = praw.Reddit(client_id=s.CLIENT_ID,
+                     client_secret=s.CLIENT_SECRET,
+                     password=s.PASSWORD,
+                     user_agent=s.USER_AGENT,
+                     username=s.USERNAME)
 
-PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
+PAT = s.PAT
 
 def to_json(data):
     return(json.dumps(data))
