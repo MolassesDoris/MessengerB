@@ -73,19 +73,12 @@ def messaging_events(payload):
     messaging_events = data["entry"][0]["messaging"]
     for event in messaging_events:
         if(event.get("postback")):
-            message_text = event["postback"]["payload"]
             print("Inside Postback")
-            message_text = message_text.lower()
-            sender_id = event["sender"]["id"]
-
-            data = to_json({
-                "recipient": {"id": sender_id},
-                "message": {"text": "THIS POSTBACK PAYLOAD BUTTON WORKS"}})
-            messagerequestpost(PAT, data)
-        # if "message" in event and "text" in event["message"]:
-        #     yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
-        # else:
-        #     yield(event["sender"]["id"], "I can't echo this")
+            yield(event["sender"]["id"],"Hi, I send memes, pics of doggos etc. Just request and I shall send.")
+        elif "message" in event and "text" in event["message"]:
+            yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
+        else:
+            yield(event["sender"]["id"], "I can't echo this")
 
 
 def send_message(token, recipient, text):
