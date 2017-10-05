@@ -122,7 +122,7 @@ def send_message(token, recipient, text):
                           "type": "image",
                           "payload": {
                             "url": payload
-                          }}}})
+                          }}, "quick_replies":qr.quick_replies_list}})
         messagerequestpost(token, data)
 def sessionhandle(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
