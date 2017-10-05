@@ -54,7 +54,7 @@ def handle_verification():
 @app.route('/', methods=['POST'])
 def handle_messages():
     print("Handling Messages")
-    get_started(PAT)
+    # get_started(PAT)
     payload = request.get_data()
     print(payload)
     for sender, message in messaging_events(payload):
@@ -151,19 +151,19 @@ def greetings(token):
 
     handle_thread_settings(token, data)
 
-def get_started(token):
-    print("=============================")
-    print("Get Started")
-    print("=============================")
-
-    data = to_json({
-    "setting_type": "call_to_actions",
-    "thread_state": "new_thread",
-    "call_to_actions": [{
-        "payload": "Hi, I send memes, pics of doggos etc. Just request and I shall send."
-    }]})
-
-    handle_thread_settings(token, data)
+# def get_started(token):
+#     print("=============================")
+#     print("Get Started")
+#     print("=============================")
+#
+#     data = to_json({
+#     "setting_type": "call_to_actions",
+#     "thread_state": "new_thread",
+#     "call_to_actions": [{
+#         "payload": "Hi, I send memes, pics of doggos etc. Just request and I shall send."
+#     }]})
+#
+#     handle_thread_settings(token, data)
 
 def hide_starting_button(token):
     data = to_json({
