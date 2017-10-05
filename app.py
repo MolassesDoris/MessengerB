@@ -72,6 +72,8 @@ def messaging_events(payload):
     data = json.loads(payload)
     messaging_events = data["entry"][0]["messaging"]
     for event in messaging_events:
+        print(event["message"]["text"])
+        print(type(event["message"]["text"]))
         if(event.get("postback")):
             print("Inside Postback")
             yield(event["sender"]["id"],"Hi, I send memes, pics of doggos etc. Just request and I shall send.")
