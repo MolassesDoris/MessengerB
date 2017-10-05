@@ -72,14 +72,13 @@ def messaging_events(payload):
     data = json.loads(payload)
     messaging_events = data["entry"][0]["messaging"]
     for event in messaging_events:
-
-
         if(event.get("postback")):
             print("=============================================")
             print("Inside Postback")
-            print(type(event["postback"]["payload"]))
             print("=============================================")
-            yield(event["sender"]["id"],"Hi, I send memes, pics of doggos etc. Just request and I shall send.")
+            if event["postback"]["payload"]=="Get Started":
+                yield(event["sender"]["id"],"Get Started")
+
         elif "message" in event and "text" in event["message"]:
             yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
         else:
@@ -98,6 +97,11 @@ def send_message(token, recipient, text):
         subreddit_name = "blackpeopletwitter"
     elif("christian") in str(text.lower()) or "dankchristian" in str(text.lower()):
         subreddit_name = "dankchristianmemes"
+    elif("started" in str(text.lower()) or "get started" in str(text.lower())):
+        data = to_json({
+            "recipient": {"id": recipient},
+            "message": {"text": "Hi I'm MemeBot. I can send you memes and doggo pics if you request."}})
+        messagerequestpost(token, data)
     else:
         print("Unknown Subreddit.")
         data = to_json({
@@ -111,7 +115,6 @@ def send_message(token, recipient, text):
         for submission in reddit.subreddit(subreddit_name).hot(limit=None):
             if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
                 query_result = Posts.query.filter(Posts.name == submission.id).first()
-                print(questartedry_result)
                 if query_result is None:
                     myPost = Posts(submission.id, submission.url)
                     myUser.posts.append(myPost)
