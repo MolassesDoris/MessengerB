@@ -54,6 +54,7 @@ def handle_verification():
 @app.route('/', methods=['POST'])
 def handle_messages():
     print("Handling Messages")
+    get_started(PAT)
     payload = request.get_data()
     print(payload)
     for sender, message in messaging_events(payload):
@@ -102,7 +103,7 @@ def send_message(token, recipient, text):
         for submission in reddit.subreddit(subreddit_name).hot(limit=None):
             if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
                 query_result = Posts.query.filter(Posts.name == submission.id).first()
-                print(query_result)
+                print(questartedry_result)
                 if query_result is None:
                     myPost = Posts(submission.id, submission.url)
                     myUser.posts.append(myPost)
@@ -135,8 +136,6 @@ def sessionhandle(session, model, **kwargs):
         session.add(instance)
         session.commit()
         return instance
-
-
 
 def greetings(token):
     print("=============================")
