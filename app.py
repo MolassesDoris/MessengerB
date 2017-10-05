@@ -72,10 +72,13 @@ def messaging_events(payload):
     data = json.loads(payload)
     messaging_events = data["entry"][0]["messaging"]
     for event in messaging_events:
-        print(event["message"]["text"])
-        print(type(event["message"]["text"]))
+
+
         if(event.get("postback")):
+            print("=============================================")
             print("Inside Postback")
+            print(type(event["postback"]["payload"]))
+            print("=============================================")
             yield(event["sender"]["id"],"Hi, I send memes, pics of doggos etc. Just request and I shall send.")
         elif "message" in event and "text" in event["message"]:
             yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
