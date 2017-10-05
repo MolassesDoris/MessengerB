@@ -20,6 +20,26 @@ reddit = praw.Reddit(client_id='8jBSydMLLF6uvg',
 
 PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
 
+def to_json(data):
+    return(json.dumps(data))
+
+def handle_thread_settings(token,data):
+    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
+                      params={"access_token": token},
+                      data = data,headers={'Content-type': 'application/json'})
+
+    if r.status_code != requests.codes.ok:
+        print(r.text)
+
+def messagerequestpost(token, data):
+    print("Received message from {}".format(recipient))
+
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
+    params={"access_token": token},
+    data=data,headers={'Content-type': 'application/json'})
+
+    if r.status_code != requests.codes.ok:
+        print(r.text)
 
 @app.route('/', methods=['GET'])
 def handle_verification():
@@ -38,7 +58,6 @@ def handle_messages():
     payload = request.get_data()
     print(payload)
     for sender, message in messaging_events(payload):
-        # greetings(PAT)
         print("Incoming from %s: %s" % (sender, message))
         mark_seen(sender, PAT)
         typing_on(sender, PAT)
@@ -64,7 +83,7 @@ def send_message(token, recipient, text):
     """
     subreddit_name =""
     if("meme" in str(text.lower())):
-        subreddit_name = "memeeconomy"
+        subreddit_name = "meirl"
     elif("rarepuppers" in str(text.lower()) or "dog" in str(text.lower()) or "puppers" in str(text.lower())):
         subreddit_name = "rarepuppers"
     elif("black") in str(text.lower()) or "blackpeople" in str(text.lower()):
@@ -73,16 +92,11 @@ def send_message(token, recipient, text):
         subreddit_name = "dankchristianmemes"
     else:
         print("Unknown Subreddit.")
+        data = to_json({
+            "recipient": {"id": recipient},
+            "message": {"text": "Unknown Meme Source."}})
+        messagerequestpost(token, data)
 
-        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-            params={"access_token": token},
-            data=json.dumps({
-                "recipient": {"id": recipient},
-                "message": {"text": text.decode('unicode_escape')}
-            }),headers={'Content-type': 'application/json'})
-
-        if r.status_code != requests.codes.ok:
-            print(r.text)
     if(subreddit_name != ""):
         myUser = sessionhandle(db.session, Users, name = recipient)
         print(subreddit_name)
@@ -103,22 +117,14 @@ def send_message(token, recipient, text):
                     break
                 else:
                     continue
-        print(qr)
-        r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-            params={"access_token": token},
-            data=json.dumps({
-                "recipient": {"id": recipient},
-                "message": {"attachment": {
-                              "type": "image",
-                              "payload": {
-                                "url": payload
-                              }},
-                              "quick_replies":qr.quick_replies_list}
-            }),
-            headers={'Content-type': 'application/json'})
-
-        if r.status_code != requests.codes.ok:
-            print(r.text)
+        data = to_json({
+            "recipient": {"id": recipient},
+            "message": {"attachment": {
+                          "type": "image",
+                          "payload": {
+                            "url": payload
+                          }}}})
+        messagerequestpost(token, data)
 def sessionhandle(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     # we check the users or posts model and filter and return the instance of the session
@@ -131,84 +137,66 @@ def sessionhandle(session, model, **kwargs):
         session.commit()
         return instance
 
+
+
 def greetings(token):
     print("=============================")
     print("Handling Greetings")
     print("=============================")
-    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings",
-                      params={"access_token": token},
-                      data=json.dumps({
-                          'setting_type': 'greeting',
-                          'greeting': {
-                              'text': "Hi friend. I am MemeBot", "locale":"default"
-                          }
-                      }),
-                      headers={'Content-type': 'application/json'})
 
-    if r.status_code != requests.codes.ok:
-        print(r.text)
+    data = to_json({
+        'setting_type': 'greeting',
+        'greeting': {
+            'text': "Hi friend. I am MemeBot", "locale":"default"
+        }
+    })
+
+    handle_thread_settings(token, data)
 
 def get_started(token):
     print("=============================")
     print("Get Started")
     print("=============================")
 
-    r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings", params={"access_token": token},
-            data=json.dumps({
-            "setting_type": "call_to_actions",
-            "thread_state": "new_thread",
-            "call_to_actions": [{
-                "payload": "Hi, I send memes, pics of doggos etc. Just request and I shall send."
-            }]}),headers={'Content-type': 'application/json'})
+    data = to_json({
+    "setting_type": "call_to_actions",
+    "thread_state": "new_thread",
+    "call_to_actions": [{
+        "payload": "Hi, I send memes, pics of doggos etc. Just request and I shall send."
+    }]})
 
-    if r.status_code != requests.codes.ok:
-            print(r.text)
+    handle_thread_settings(token, data)
 
-def hide_starting_button(self):
-        r = requests.post("https://graph.facebook.com/v2.6/me/thread_settings", params={"access_token": token},
-                data=json.dumps({
-                "setting_type": "call_to_actions",
-                "thread_state": "new_thread",
-                }),headers={'Content-type': 'application/json'})
+def hide_starting_button(token):
+    data = to_json({
+    "setting_type": "call_to_actions",
+    "thread_state": "new_thread",
+    })
 
-        if r.status_code != requests.codes.ok:
-                print(r.text)
+    handle_thread_settings(token, data)
+
 def typing_on(recipient, token):
     print("Replying to {}".format(recipient))
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-    params={"access_token": token},
-    data=json.dumps({
+
+    data = to_json({
         "recipient": {"id": recipient},
         "sender_action": "typing_on"
-    }),
-    headers={'Content-type': 'application/json'})
-    if r.status_code != requests.codes.ok:
-        print(r.text)
+    })
+
+    messagerequestpost(token, data)
 
 def typing_off(recipient, token):
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-    params={"access_token": token},
-    data=json.dumps({
-        "recipient": {"id": recipient},
-        "sender_action": "typing_off"
-    }),
-    headers={'Content-type': 'application/json'})
-    print("Replied to {}".format(recipient))
-    if r.status_code != requests.codes.ok:
-        print(r.text)
+    data = to_json({"recipient": {"id": recipient},
+    "sender_action": "typing_off"})
+
+    messagerequestpost(token, data)
 
 def mark_seen(recipient, token):
 
-    print("Received message from {}".format(recipient))
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-    params={"access_token": token},
-    data=json.dumps({
-        "recipient": {"id": recipient},
-        "sender_action": "mark_seen"
-    }),
-    headers={'Content-type': 'application/json'})
-    if r.status_code != requests.codes.ok:
-        print(r.text)
+    data = to_json({"recipient": {"id": recipient},
+    "sender_action": "mark_seen"})
+
+    messagerequestpost(token, data)
 
 relationship_table=db.Table('relationship_table',
     db.Column('user_id', db.Integer,db.ForeignKey('users.id'), nullable=False),
