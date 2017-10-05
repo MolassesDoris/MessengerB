@@ -32,8 +32,6 @@ def handle_thread_settings(token,data):
         print(r.text)
 
 def messagerequestpost(token, data):
-    print("Received message from {}".format(recipient))
-
     r = requests.post("https://graph.facebook.com/v2.6/me/messages",
     params={"access_token": token},
     data=data,headers={'Content-type': 'application/json'})
