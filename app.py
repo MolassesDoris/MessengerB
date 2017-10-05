@@ -79,7 +79,7 @@ def messaging_events(payload):
             sender_id = event["sender"]["id"]
 
             data = to_json({
-                "recipient": {"id": recipient},
+                "recipient": {"id": sender_id},
                 "message": {"text": "THIS POSTBACK PAYLOAD BUTTON WORKS"}})
             messagerequestpost(PAT, data)
         # if "message" in event and "text" in event["message"]:
