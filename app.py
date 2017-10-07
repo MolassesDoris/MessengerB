@@ -12,6 +12,9 @@ import Quick_replies as qr
 import Secret as s
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+print("==============================")
+print(os.environ['DATABASE_URL'])
+print("==============================")
 db = SQLAlchemy(app)
 reddit = praw.Reddit(client_id=s.CLIENT_ID,
                      client_secret=s.CLIENT_SECRET,
