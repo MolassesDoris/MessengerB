@@ -12,6 +12,7 @@ import Quick_replies as qr
 import Secret as s
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://hvjftrxpatkeyp:b2b2b165164776fa8bf65745bab40a290d0749225556b0192f59e9405e142224@ec2-54-75-228-125.eu-west-1.compute.amazonaws.com:5432/dejq5si52giu7g'
 print("==============================")
 print(os.environ['DATABASE_URL'])
 print("==============================")
@@ -23,6 +24,12 @@ reddit = praw.Reddit(client_id=s.CLIENT_ID,
                      username=s.USERNAME)
 
 PAT = s.PAT
+
+class Location():
+
+    def __init__(self, longitude, latitude):
+        self.longitude = longitude
+        self.latitude = latitude
 
 def to_json(data):
     return(json.dumps(data))
@@ -64,9 +71,21 @@ def handle_messages():
         print("Incoming from %s: %s" % (sender, message))
         mark_seen(sender, PAT)
         typing_on(sender, PAT)
-        send_message(PAT, sender, message)
+        if(isinstance(message,Location)):
+            handle_location(PAT, sender, message)
+        else: send_message(PAT, sender, message)
         typing_off(sender, PAT)
     return("ok")
+
+def handle_location(token, sender, location):
+    myUser = sessionhandle(db.session, Users, name = sender)
+    myUser.latitude = location.latitude
+    myUser.longitude = location.longitude
+    db.session.commit()
+    data = to_json({
+        "recipient": {"id": sender},
+        "message": {"text": "Updated Location."}})
+    messagerequestpost(token, data)
 
 def messaging_events(payload):
     """Generate tuples of (sender_id, message_text) from theLowCholestoralMemes
@@ -81,7 +100,10 @@ def messaging_events(payload):
             print("=============================================")
             if event["postback"]["payload"]=="Get Started":
                 yield(event["sender"]["id"],"Get Started")
-
+        elif(str(event['message']['attachments'][0]['type']) == 'location'):
+            latitude= event['message']['attachments'][0]['payload']['coordinates']['lat']
+            longitude= event['message']['attachments'][0]['payload']['coordinates']['long']
+            yield(event["sender"]["id"], Location(latitude, longitude))
         elif "message" in event and "text" in event["message"]:
             yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
         else:
@@ -219,7 +241,8 @@ class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255),nullable=False)
     posts=db.relationship('Posts', secondary=relationship_table, backref='users' )
-
+    longitude = db.Column(db.Float)
+    lattitude = db.Column(db.Float)
     def __init__(self, name=None):
         self.name = name
 
