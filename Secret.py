@@ -8,3 +8,6 @@ USERNAME='LowCholestoralMemes'
 
 # FB ACCESS TOKEN
 PAT = 'EAAHKlA4PzIABALdD5WlzgkFuZCqEcvC5LfKixRsdI02UilqkAOyWZBpnWvQivb3rHWiaTd8j5hhS9mbz1zVlSxWSjE9ZCQ0CY9vkEoZCKbIFhNgvIMa6vVph56TcxaMtkf2rUNJWm8BVBZCrihZAvNZCiaxAPuXNOcFzXIgOe0AAHT4hbpHrqAR'
+
+# ggle api AIzaSyATAxU2W3Mya2XC_bCfbkcyjsZ_7iqp9x4
+GAPI = 'AIzaSyATAxU2W3Mya2XC_bCfbkcyjsZ_7iqp9x4'
