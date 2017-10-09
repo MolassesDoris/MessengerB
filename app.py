@@ -10,12 +10,17 @@ app = Flask(__name__)
 import praw
 import Quick_replies as qr
 import Secret as s
+from nltk import pos_tag, word_tokenize
+from googleplaces import GooglePlaces, types, lang
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://hvjftrxpatkeyp:b2b2b165164776fa8bf65745bab40a290d0749225556b0192f59e9405e142224@ec2-54-75-228-125.eu-west-1.compute.amazonaws.com:5432/dejq5si52giu7g'
-print("==============================")
-print(os.environ['DATABASE_URL'])
-print("==============================")
+google_places = GooglePlaces(s.GAPI)
+
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://oklfqgmetzhqde:7e0fa4548443cfb59a98fb3075a1d241d3044f059bd6e1f6b969ee674c0bcd0e@ec2-176-34-242-58.eu-west-1.compute.amazonaws.com:5432/d3av8d9m9fdf8p'
+# print("==============================")
+# print(os.environ['DATABASE_URL'])
+# print("==============================")
 db = SQLAlchemy(app)
 reddit = praw.Reddit(client_id=s.CLIENT_ID,
                      client_secret=s.CLIENT_SECRET,
@@ -79,7 +84,7 @@ def handle_messages():
 
 def handle_location(token, sender, location):
     myUser = sessionhandle(db.session, Users, name = sender)
-    myUser.latitude = location.latitude
+    myUser.lattitude = location.latitude
     myUser.longitude = location.longitude
     db.session.commit()
     data = to_json({
@@ -87,6 +92,17 @@ def handle_location(token, sender, location):
         "message": {"text": "Updated Location."}})
     messagerequestpost(token, data)
 
+def handle_geosearch(recipient,text):
+    search_words= " ".join([token for token, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
+    myUser = sessionhandle(db.session, Users, name = recipient)
+    query_result = google_places.nearby_search(
+            location='{},{}'.format(myUser.longitude, myUser.lattitude),radius=3200, keyword=search_words)
+    message =",".join([place.name for place in query_result.places])
+    data = to_json({
+        "recipient": {"id": recipient},
+        "message": {"text": message}})
+
+    return(data)
 def messaging_events(payload):
     """Generate tuples of (sender_id, message_text) from theLowCholestoralMemes
     provided payload.
@@ -100,12 +116,12 @@ def messaging_events(payload):
             print("=============================================")
             if event["postback"]["payload"]=="Get Started":
                 yield(event["sender"]["id"],"Get Started")
-        elif(str(event['message']['attachments'][0]['type']) == 'location'):
-            latitude= event['message']['attachments'][0]['payload']['coordinates']['lat']
-            longitude= event['message']['attachments'][0]['payload']['coordinates']['long']
-            yield(event["sender"]["id"], Location(latitude, longitude))
         elif "message" in event and "text" in event["message"]:
             yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
+        elif (str(event['message']['attachments'][0]['type']) == 'location'):
+            latitude = event['message']['attachments'][0]['payload']['coordinates']['lat']
+            longitude = event['message']['attachments'][0]['payload']['coordinates']['long']
+            yield (event["sender"]["id"], Location(latitude, longitude))
         else:
             yield(event["sender"]["id"], "I can't echo this")
 
@@ -126,6 +142,9 @@ def send_message(token, recipient, text):
         data = to_json({
             "recipient": {"id": recipient},
             "message": {"text": "Hi I'm MemeBot. I can send you memes and doggo pics if you request."}})
+        messagerequestpost(token, data)
+    elif("search" in str(text.lower()) or "looking" in str(text.lower())):
+        data = handle_geosearch(recipient,text)
         messagerequestpost(token, data)
     else:
         print("Unknown Subreddit.")
