@@ -92,12 +92,13 @@ def handle_location(token, sender, location):
         "message": {"text": "Updated Location."}})
     messagerequestpost(token, data)
 
-def handle_geosearch(recipient,text):
+def handle_geosearch(recipient,text, location=None):
     search_words= " ".join([token for token, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
     myUser = sessionhandle(db.session, Users, name = recipient)
     query_result = google_places.nearby_search(
             location='{},{}'.format(myUser.longitude, myUser.lattitude),radius=3200, keyword=search_words)
-    message =",".join([place.name for place in query_result.places])
+    # message =",".join([place.name for place in query_result.places])
+
     data = to_json({
         "recipient": {"id": recipient},
         "message": {"text": message}})
