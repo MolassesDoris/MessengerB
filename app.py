@@ -54,6 +54,8 @@ def messagerequestpost(token, data):
 
     if r.status_code != requests.codes.ok:
         print(r.text)
+    # if "URL provided is not whitelisted" in r.text:
+    #     handle_whitelisting(token, data)
 
 @app.route('/', methods=['GET'])
 def handle_verification():
@@ -82,6 +84,16 @@ def handle_messages():
         typing_off(sender, PAT)
     return("ok")
 
+def handle_whitelisting(token, website):
+    urlstowhitelist =[]
+
+    data = to_json({
+        "setting_type": "domain_whitelisting",
+                   "whitelisted_domains": [website],
+                   "domain_action_type": "add"
+        })
+    handle_thread_settings(token, data)
+
 def handle_location(token, sender, location):
     myUser = sessionhandle(db.session, Users, name = sender)
     myUser.lattitude = location.latitude
@@ -92,17 +104,48 @@ def handle_location(token, sender, location):
         "message": {"text": "Updated Location."}})
     messagerequestpost(token, data)
 
-def handle_geosearch(recipient,text, location=None):
+def handle_geosearch(recipient,text, location=None,amttodisplay=3):
     search_words= " ".join([token for token, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
     myUser = sessionhandle(db.session, Users, name = recipient)
     query_result = google_places.nearby_search(
-            location='{},{}'.format(myUser.longitude, myUser.lattitude),radius=3200, keyword=search_words)
-    # message =",".join([place.name for place in query_result.places])
-
-    data = to_json({
-        "recipient": {"id": recipient},
-        "message": {"text": message}})
-
+            location='{},{}'.format(myUser.longitude, myUser.lattitude),radius=2000, keyword=search_words)
+    if len(query_result.places) >0 :
+        elements = []
+        for indx, place in enumerate(query_result.places):
+            place.get_details()
+            image_url = place.url
+            if(len(place.photos)>0):
+                photo = place.photos[0]
+                photo.get(maxheight=500, maxwidth=500)
+                image_url = photo.url
+            element = {"title": place.name.encode('utf-8'),
+                       "image_url": image_url,
+                       "buttons": [{"title": "Open in Maps",
+                                    "type": "web_url",
+                                    "url": place.url,
+                                    "messenger_extensions": 'true',
+                                    "webview_height_ratio": "tall",
+                                    }]}
+            element = json.dumps(element)
+            elements.append(element)
+            if(indx == amttodisplay):
+                break
+        data = to_json({
+            "recipient":{"id": recipient},
+            "message":{
+                "attachment":{
+                    "type" : "template",
+                    "payload" : {
+                        "template_type" : "list",
+                        "top_element_style": "compact",
+                        "elements": elements
+                    }
+                }
+            }
+        })
+    else: data = to_json({
+            "recipient": {"id": recipient},
+            "message": {"text": "Couldn't find {}".format(search_words)}})
     return(data)
 def messaging_events(payload):
     """Generate tuples of (sender_id, message_text) from theLowCholestoralMemes
