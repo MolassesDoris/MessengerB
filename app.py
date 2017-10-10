@@ -85,7 +85,7 @@ def handle_messages():
     return("ok")
 
 def handle_whitelisting(token, website):
-    # TODO THIS FUNCTION NEEDS TO BE IMPLEMENTED PROPERLY
+    # TODO THIS FUNCTION NEEDS TO BE IMPLEMENTED PROPERLY.
 
     data = to_json({
         "setting_type": "domain_whitelisting",
