@@ -14,7 +14,7 @@ from nltk import pos_tag, word_tokenize
 from googleplaces import GooglePlaces, types, lang
 
 google_places = GooglePlaces(s.GAPI)
-
+Users = []
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://oklfqgmetzhqde:7e0fa4548443cfb59a98fb3075a1d241d3044f059bd6e1f6b969ee674c0bcd0e@ec2-176-34-242-58.eu-west-1.compute.amazonaws.com:5432/d3av8d9m9fdf8p'
@@ -33,8 +33,15 @@ PAT = s.PAT
 class Location():
 
     def __init__(self, longitude, latitude):
-        self.longitude = longitude
-        self.latitude = latitude
+        self._longitude = longitude
+        self._latitude = latitude
+
+    def get_longitude(self):
+        return self._longitude
+
+    def get_latitude(self):
+        return self._latitude
+
 
 def to_json(data):
     return(json.dumps(data))
@@ -61,7 +68,7 @@ def messagerequestpost(token, data):
 def handle_verification():
     print("Handling Verification.")
 
-    if request.args.get('hub.verify_token') == 'my_voice_is_my_password_verify_me':
+    if request.args.get('hub.verify_token') == 'verify_token_fds':
         print("Verification successful!")
         return(request.args.get('hub.challenge',''))
     else:
@@ -76,39 +83,40 @@ def handle_messages():
     print(payload)
     for sender, message in messaging_events(payload):
         print("Incoming from %s: %s" % (sender, message))
-        mark_seen(sender, PAT)
-        typing_on(sender, PAT)
-        if(isinstance(message,Location)):
+        user = next((u1 for u1 in Users if u1.get_id() == sender), None)
+        if user is None:
+            user = User(sender)
+            Users.append(user)
+        mark_seen(user, PAT)
+        typing_on(user, PAT)
+        if("pic" in message or "send" in message or "get" in message):
+            send_message_reddit(PAT, user, message)
+        elif(isinstance(message,Location)):
             handle_location(PAT, sender, message)
-        else: send_message(PAT, sender, message)
-        typing_off(sender, PAT)
+        elif("look" in message or "search" in message and user.get_location() is not None):
+            handle_geosearch(PAT, user, message)
+        elif("look" in message or "search" in message and user.get_location() is None):
+            ask_for_location(user, PAT)
+        else:
+            print("Not Sure how to respond.")
+            data = to_json({
+                "recipient": {"id": user.get_id()},
+                "message": {"text": "I don't understand."}})
+            messagerequestpost(PAT, data)
     return("ok")
 
-def handle_whitelisting(token, website):
-    # TODO THIS FUNCTION NEEDS TO BE IMPLEMENTED PROPERLY.
-
+def handle_location(token, user, location):
+    user.setLocation(location)
     data = to_json({
-        "setting_type": "domain_whitelisting",
-                   "whitelisted_domains": [website],
-                   "domain_action_type": "add"
-        })
-    handle_thread_settings(token, data)
-
-def handle_location(token, sender, location):
-    myUser = sessionhandle(db.session, Users, name = sender)
-    myUser.lattitude = location.latitude
-    myUser.longitude = location.longitude
-    db.session.commit()
-    data = to_json({
-        "recipient": {"id": sender},
+        "recipient": {"id": user.get_id()},
         "message": {"text": "Updated Location."}})
     messagerequestpost(token, data)
 
-def handle_geosearch(recipient,text, location=None,amttodisplay=3):
+def handle_geosearch(token, recipient, text, amttodisplay = 3):
     search_words= " ".join([token for token, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
-    myUser = sessionhandle(db.session, Users, name = recipient)
+
     query_result = google_places.nearby_search(
-            location='{},{}'.format(myUser.longitude, myUser.lattitude),radius=2000, keyword=search_words)
+            location='{},{}'.format(recipient.get_location().get_longitude(), recipient.get_location().get_latitude()),radius=2000, keyword=search_words)
     if len(query_result.places) >0 :
         elements = []
         for indx, place in enumerate(query_result.places):
@@ -131,7 +139,7 @@ def handle_geosearch(recipient,text, location=None,amttodisplay=3):
             if(indx == amttodisplay):
                 break
         data = to_json({
-            "recipient":{"id": recipient},
+            "recipient":{"id": recipient.get_id()},
             "message":{
                 "attachment":{
                     "type" : "template",
@@ -144,9 +152,17 @@ def handle_geosearch(recipient,text, location=None,amttodisplay=3):
             }
         })
     else: data = to_json({
-            "recipient": {"id": recipient},
+            "recipient": {"id": recipient.get_id()},
             "message": {"text": "Couldn't find {}".format(search_words)}})
-    return(data)
+
+    messagerequestpost(token, data)
+
+def ask_for_location(user, token):
+    data = to_json({
+        "recipient": {"id": user.get_id()},
+        "message": {"text": "I'd love to help you look. Could you send me a location?"}})
+    messagerequestpost(token, data)
+
 def messaging_events(payload):
     """Generate tuples of (sender_id, message_text) from theLowCholestoralMemes
     provided payload.
@@ -169,10 +185,10 @@ def messaging_events(payload):
         else:
             yield(event["sender"]["id"], "I can't echo this")
 
-
-def send_message(token, recipient, text):
+def send_message_reddit(token, recipient, text):
     """Send the message text to recipient with id recipient.
     """
+
     subreddit_name =""
     if("meme" in str(text.lower())):
         subreddit_name = "meirl"
@@ -187,9 +203,6 @@ def send_message(token, recipient, text):
             "recipient": {"id": recipient},
             "message": {"text": "Hi I'm MemeBot. I can send you memes and doggo pics if you request."}})
         messagerequestpost(token, data)
-    elif("search" in str(text.lower()) or "looking" in str(text.lower())):
-        data = handle_geosearch(recipient,text)
-        messagerequestpost(token, data)
     else:
         print("Unknown Subreddit.")
         data = to_json({
@@ -198,43 +211,58 @@ def send_message(token, recipient, text):
         messagerequestpost(token, data)
 
     if(subreddit_name != ""):
-        myUser = sessionhandle(db.session, Users, name = recipient)
-        print(subreddit_name)
         for submission in reddit.subreddit(subreddit_name).hot(limit=None):
             if (submission.link_flair_css_class == 'image') or ((submission.is_self != True) and ((".jpg" in submission.url) or (".png" in submission.url))):
-                query_result = Posts.query.filter(Posts.name == submission.id).first()
-                if query_result is None:
-                    myPost = Posts(submission.id, submission.url)
-                    myUser.posts.append(myPost)
-                    db.session.commit()
-                    payload = submission.url
-                    break
-                elif myUser not in query_result.users:
-                    myUser.posts.append(query_result)
-                    db.session.commit()
+                user_posts = recipient.get_posts()
+                if(user_posts is None):
+                    user_posts = []
+                if(next((post for post in user_posts if post.get_id() == submission.id), None) is None):
+                    recipient.addposts(Post(submission.id, submission.url))
                     payload = submission.url
                     break
                 else:
                     continue
         data = to_json({
-            "recipient": {"id": recipient},
+            "recipient": {"id": recipient.get_id()},
             "message": {"attachment": {
                           "type": "image",
                           "payload": {
                             "url": payload
                           }}, "quick_replies":qr.quick_replies_list}})
         messagerequestpost(token, data)
-def sessionhandle(session, model, **kwargs):
-    instance = session.query(model).filter_by(**kwargs).first()
-    # we check the users or posts model and filter and return the instance of the session
-    # if that item is not in the model then we add
-    if instance:
-        return instance
-    else:
-        instance = model(**kwargs)
-        session.add(instance)
-        session.commit()
-        return instance
+
+def mark_seen(recipient, token):
+
+    recipient_id = recipient.get_id()
+    data = to_json({"recipient": {"id": recipient_id},
+    "sender_action": "mark_seen"})
+
+    messagerequestpost(token, data)
+
+def typing_on(recipient, token):
+    recipient_id = recipient.get_id()
+    print("Replying to {}".format(recipient_id))
+
+    data = to_json({
+        "recipient": {"id": recipient_id},
+        "sender_action": "typing_on"
+    })
+
+    messagerequestpost(token, data)
+
+def typing_off(recipient, token):
+    data = to_json({"recipient": {"id": recipient.get_id()},
+    "sender_action": "typing_off"})
+
+    messagerequestpost(token, data)
+
+def hide_starting_button(token):
+    data = to_json({
+    "setting_type": "call_to_actions",
+    "thread_state": "new_thread",
+    })
+
+    handle_thread_settings(token, data)
 
 def greetings(token):
     print("=============================")
@@ -250,73 +278,41 @@ def greetings(token):
 
     handle_thread_settings(token, data)
 
-# def get_started(token):
-#     print("=============================")
-#     print("Get Started")
-#     print("=============================")
-#
-#     data = to_json({
-#     "setting_type": "call_to_actions",
-#     "thread_state": "new_thread",
-#     "call_to_actions": [{
-#         "payload": "Hi, I send memes, pics of doggos etc. Just request and I shall send."
-#     }]})
-#
-#     handle_thread_settings(token, data)
+class Post():
 
-def hide_starting_button(token):
-    data = to_json({
-    "setting_type": "call_to_actions",
-    "thread_state": "new_thread",
-    })
+    def __init__(self, id, url):
+        self._id = id
+        self._url = url
 
-    handle_thread_settings(token, data)
+    def get_id(self):
+        return self._id
+    def get_url(self):
+        return self._url
+class User():
 
-def typing_on(recipient, token):
-    print("Replying to {}".format(recipient))
+    def __init__(self, id):
+        self._id = id
+        self._posts = None
+        self._location = None
+        # if(self not in Users):
+        #     Users.append(self)
 
-    data = to_json({
-        "recipient": {"id": recipient},
-        "sender_action": "typing_on"
-    })
+    def get_id(self):
+        return self._id
 
-    messagerequestpost(token, data)
+    def get_posts(self):
+        return self._posts
 
-def typing_off(recipient, token):
-    data = to_json({"recipient": {"id": recipient},
-    "sender_action": "typing_off"})
+    def get_location(self):
+        return self._location
 
-    messagerequestpost(token, data)
+    def addposts(self,post):
+        if(self._posts is None):
+            self._posts = []
+        self._posts.append(post)
 
-def mark_seen(recipient, token):
-
-    data = to_json({"recipient": {"id": recipient},
-    "sender_action": "mark_seen"})
-
-    messagerequestpost(token, data)
-
-relationship_table=db.Table('relationship_table',
-    db.Column('user_id', db.Integer,db.ForeignKey('users.id'), nullable=False),
-    db.Column('post_id',db.Integer,db.ForeignKey('posts.id'),nullable=False),
-    db.PrimaryKeyConstraint('user_id', 'post_id'))
-
-class Users(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255),nullable=False)
-    posts=db.relationship('Posts', secondary=relationship_table, backref='users' )
-    longitude = db.Column(db.Float)
-    lattitude = db.Column(db.Float)
-    def __init__(self, name=None):
-        self.name = name
-
-class Posts(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    name=db.Column(db.String, unique=True, nullable=False)
-    url=db.Column(db.String, nullable=False)
-
-    def __init__(self, name=None, url=None):
-        self.name = name
-        self.url = url
+    def setLocation(self,location):
+        self._location = location
 
 if __name__ == '__main__':
     app.run()
