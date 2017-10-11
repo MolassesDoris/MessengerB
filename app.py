@@ -1,27 +1,18 @@
-# EAAHKlA4PzIABAIpdIctX2mL19yEJl67ntOEu1m2BwXfIYCwB1uVKZCRzRZCWZCugqTb5i555ARBaoPiZBZCJG7W1wiwTyn9eKcx1b767bazSSeAZCBsmacITxhV6TAdZC82qHpv0VZC0ZCMWyr1dBYKpJiZCp7VqEWj10zjrWbwTiyltfd7UWoo8WQ
-# https://pythontips.com/2017/04/13/making-a-reddit-facebook-messenger-bot/
-#  praw.Reddit(client_id = '8jBSydMLLF6uvg', client_secret = '3w8bcqu7FYTpGJNCm3oQILV7DtM'
-import os
 from flask import Flask, request
 import json
 import requests
-from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 import praw
 import Quick_replies as qr
 import Secret as s
 from nltk import pos_tag, word_tokenize
-from googleplaces import GooglePlaces, types, lang
+import googlemaps
+from Users import User, Location, Post
 
-google_places = GooglePlaces(s.GAPI)
+google_places = googlemaps.Client(s.GAPI)
+
 Users = []
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://oklfqgmetzhqde:7e0fa4548443cfb59a98fb3075a1d241d3044f059bd6e1f6b969ee674c0bcd0e@ec2-176-34-242-58.eu-west-1.compute.amazonaws.com:5432/d3av8d9m9fdf8p'
-# print("==============================")
-# print(os.environ['DATABASE_URL'])
-# print("==============================")
-db = SQLAlchemy(app)
 reddit = praw.Reddit(client_id=s.CLIENT_ID,
                      client_secret=s.CLIENT_SECRET,
                      password=s.PASSWORD,
@@ -29,18 +20,6 @@ reddit = praw.Reddit(client_id=s.CLIENT_ID,
                      username=s.USERNAME)
 
 PAT = s.PAT
-
-class Location():
-
-    def __init__(self, longitude, latitude):
-        self._longitude = longitude
-        self._latitude = latitude
-
-    def get_longitude(self):
-        return self._longitude
-
-    def get_latitude(self):
-        return self._latitude
 
 
 def to_json(data):
@@ -89,14 +68,15 @@ def handle_messages():
             Users.append(user)
         mark_seen(user, PAT)
         typing_on(user, PAT)
-        if("pic" in message or "send" in message or "get" in message):
+
+        if(isinstance(message,Location)):
+            handle_location(PAT, user, message)
+        elif ("pic" in message.lower() or "send" in message.lower() or "get" in message.lower()):
             send_message_reddit(PAT, user, message)
-        elif(isinstance(message,Location)):
-            handle_location(PAT, sender, message)
-        elif("look" in message or "search" in message and user.get_location() is not None):
-            handle_geosearch(PAT, user, message)
-        elif("look" in message or "search" in message and user.get_location() is None):
-            ask_for_location(user, PAT)
+        # elif("look" in message or "search" in message and user.get_location() is not None):
+        #     handle_geosearch(PAT, user, message)
+        # elif("look" in message or "search" in message and user.get_location() is None):
+        #     ask_for_location(user, PAT)
         else:
             print("Not Sure how to respond.")
             data = to_json({
@@ -278,41 +258,6 @@ def greetings(token):
 
     handle_thread_settings(token, data)
 
-class Post():
-
-    def __init__(self, id, url):
-        self._id = id
-        self._url = url
-
-    def get_id(self):
-        return self._id
-    def get_url(self):
-        return self._url
-class User():
-
-    def __init__(self, id):
-        self._id = id
-        self._posts = None
-        self._location = None
-        # if(self not in Users):
-        #     Users.append(self)
-
-    def get_id(self):
-        return self._id
-
-    def get_posts(self):
-        return self._posts
-
-    def get_location(self):
-        return self._location
-
-    def addposts(self,post):
-        if(self._posts is None):
-            self._posts = []
-        self._posts.append(post)
-
-    def setLocation(self,location):
-        self._location = location
 
 if __name__ == '__main__':
     app.run()
