@@ -11,3 +11,4 @@ psycopg2
 praw
 nltk
 googlemaps
+python-google-places

@@ -1,9 +1,11 @@
-import Quick_replies as qr
 import MessageHandler
-from Utils import *
+import Quick_replies as qr
 from Users import *
+from Utils import *
+import praw
+import Secret as s
 
-def send_message_reddit(token, recipient, text,reddit):
+def send_message_reddit(token, recipient, text, reddit):
     """Send the message text to recipient with id recipient.
     """
 

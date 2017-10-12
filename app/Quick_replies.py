@@ -1,18 +1,18 @@
 quick_replies_list = [{
     "content_type":"text",
-    "title":"Meme",
+    "title":"Send Meme",
     "payload":"meme",},{
 
     "content_type":"text",
-    "title":"Doggos",
+    "title":"Send Doggos picture",
     "payload":"dog",
     },{
     "content_type":"text",
-    "title":"BlackPeopleTwitter",
+    "title":"Send BlackPeopleTwitter pic",
     "payload":"BlackPeopleTwitter",
     },{
     "content_type":"text",
-    "title":"Dank Christian",
+    "title":"Send Dank Christian pic",
     "payload":"DankChristian",
     }
 ]

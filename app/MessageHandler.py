@@ -1,13 +1,17 @@
-import requests
 import json
-from Users import *
-from flask import Flask, request
-import Secret as s
+
 import praw
-from RedditMessageHandler import send_message_reddit
+import requests
+from googleplaces import GooglePlaces
+# import googlemaps
 import GoogleMapsHandler
+import Secret as s
+from RedditMessageHandler import send_message_reddit
+from Users import *
 from Utils import to_json
+
 PAT =s.PAT
+
 
 def handle_message_req(request, Users):
     payload = request.get_data()
@@ -24,16 +28,19 @@ def handle_message_req(request, Users):
         if (isinstance(message, Location)):
             GoogleMapsHandler.handle_location(PAT, user, message)
         elif ("pic" in message.lower() or "send" in message.lower() or "get" in message.lower()):
+            print("Initialized Reddit API Client")
             reddit = praw.Reddit(client_id=s.CLIENT_ID,
                                  client_secret=s.CLIENT_SECRET,
                                  password=s.PASSWORD,
                                  user_agent=s.USER_AGENT,
                                  username=s.USERNAME)
-            send_message_reddit(PAT, user, message,reddit)
-        # elif("look" in message or "search" in message and user.get_location() is not None):
-        #     handle_geosearch(PAT, user, message)
-        # elif("look" in message or "search" in message and user.get_location() is None):
-        #     ask_for_location(user, PAT)
+            send_message_reddit(PAT, user, message, reddit)
+        elif("look" in message.lower() and user.get_location() is not None):
+            print("Initialized Google Maps API Client")
+            google_places = GooglePlaces(s.GAPI)
+            GoogleMapsHandler.handle_geosearch(PAT, user, message, google_places)
+        elif ("look" in message.lower() and user.get_location() is None):
+            GoogleMapsHandler.ask_for_location(user, PAT)
         else:
             print("Not Sure how to respond.")
             data = to_json({

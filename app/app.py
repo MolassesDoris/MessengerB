@@ -5,6 +5,8 @@ import Secret as s
 from nltk import pos_tag, word_tokenize
 import googlemaps
 from MessageHandler import *
+import RedditMessageHandler
+
 google_places = googlemaps.Client(s.GAPI)
 
 Users = []

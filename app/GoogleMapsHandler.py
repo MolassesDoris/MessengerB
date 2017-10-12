@@ -1,35 +1,37 @@
-from Utils import to_json
-import MessageHandler
-import googlemaps
 import json
-import Secret as s
+import googlemaps
 from nltk import pos_tag, word_tokenize
-
-google_places = googlemaps.Client(s.GAPI)
+import MessageHandler
+import Secret as s
+from Utils import to_json
+from googlemaps import places as google_places
 
 def handle_location(token, user, location):
     user.setLocation(location)
     data = to_json({
         "recipient": {"id": user.get_id()},
-        "message": {"text": "Updated Location."}})
+        "message": {"text": "Updated Location. What was it you are looking for?"}})
     MessageHandler.messagerequestpost(token, data)
 
-def handle_geosearch(token, recipient, text, amttodisplay = 3):
-    search_words= " ".join([token for token, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
+def handle_geosearch(token, recipient, text, client, amttodisplay = 3):
+    search_words= " ".join([tok for tok, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
 
-    query_result = google_places.nearby_search(
-            location='{},{}'.format(recipient.get_location().get_longitude(), recipient.get_location().get_latitude()),radius=2000, keyword=search_words)
-    if len(query_result.places) >0 :
+    query_result = client.nearby_search(
+        location='{},{}'.format(recipient.get_location().get_longitude(),
+                                recipient.get_location().get_latitude()),
+        keyword=search_words, rankby="distance")
+
+    if len(query_result.places) > 0:
         elements = []
-        for indx, place in enumerate(query_result.places):
-            place.get_details()
-            image_url = place.url
-            if(len(place.photos)>0):
+        for indx, place in enumerate(query_result.places[:amttodisplay]):
+            image_url = None
+            if (len(place.photos) > 0):
                 photo = place.photos[0]
                 photo.get(maxheight=500, maxwidth=500)
                 image_url = photo.url
             element = {"title": place.name.encode('utf-8'),
                        "image_url": image_url,
+                       "subtitle": ", ".join([type.replace("_"," ")for type in place.types]),
                        "buttons": [{"title": "Open in Maps",
                                     "type": "web_url",
                                     "url": place.url,
@@ -38,8 +40,6 @@ def handle_geosearch(token, recipient, text, amttodisplay = 3):
                                     }]}
             element = json.dumps(element)
             elements.append(element)
-            if(indx == amttodisplay):
-                break
         data = to_json({
             "recipient":{"id": recipient.get_id()},
             "message":{
