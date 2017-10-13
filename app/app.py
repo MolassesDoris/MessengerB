@@ -1,11 +1,7 @@
 from flask import Flask, request
 app = Flask(__name__)
-import praw
-import Secret as s
-from nltk import pos_tag, word_tokenize
 import googlemaps
 from MessageHandler import *
-import RedditMessageHandler
 
 google_places = googlemaps.Client(s.GAPI)
 

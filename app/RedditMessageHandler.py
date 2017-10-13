@@ -20,8 +20,8 @@ def send_message_reddit(token, recipient, text, reddit):
         subreddit_name = "dankchristianmemes"
     elif("started" in str(text.lower()) or "get started" in str(text.lower())):
         data = to_json({
-            "recipient": {"id": recipient},
-            "message": {"text": "Hi I'm MemeBot. I can send you memes and doggo pics if you request."}})
+            "recipient": {"id": recipient.get_id()},
+            "message": {"text": "Hi I'm MemeBot. I can send you memes, doggo pics and I can also help you look for shops etc. if you request.".encode("utf-8")}})
         MessageHandler.messagerequestpost(token, data)
     else:
         print("Unknown Subreddit.")
@@ -48,5 +48,5 @@ def send_message_reddit(token, recipient, text, reddit):
                           "type": "image",
                           "payload": {
                             "url": payload
-                          }}, "quick_replies":qr.quick_replies_list}})
+                          }}, "quick_replies":qr.quick_replies_list_reddit}})
         MessageHandler.messagerequestpost(token, data)

@@ -5,12 +5,14 @@ import MessageHandler
 import Secret as s
 from Utils import to_json
 from googlemaps import places as google_places
-
+import Quick_replies as qr
 def handle_location(token, user, location):
     user.setLocation(location)
     data = to_json({
         "recipient": {"id": user.get_id()},
-        "message": {"text": "Updated Location. What was it you are looking for?"}})
+        "message": {"text": "Updated Location. What is it you are looking for?",
+                    "quick_replies" : qr.quick_replies_list_smaps
+                    }})
     MessageHandler.messagerequestpost(token, data)
 
 def handle_geosearch(token, recipient, text, client, amttodisplay = 3):
@@ -62,5 +64,9 @@ def handle_geosearch(token, recipient, text, client, amttodisplay = 3):
 def ask_for_location(user, token):
     data = to_json({
         "recipient": {"id": user.get_id()},
-        "message": {"text": "I'd love to help you look. Could you send me a location?"}})
+        "message": {"text": "I'd love to help you look. Could you send me a location?",
+                    "quick_replies":[
+      {
+        "content_type":"location"
+      }]}})
     MessageHandler.messagerequestpost(token, data)

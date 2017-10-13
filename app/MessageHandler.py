@@ -72,6 +72,8 @@ def messaging_events(payload):
     data = json.loads(payload)
     messaging_events = data["entry"][0]["messaging"]
     for event in messaging_events:
+        if("message" in event and "quick_reply" in event["message"]):
+            yield (event["sender"]["id"], event["message"]["quick_reply"]["payload"])
         if(event.get("postback")):
             print("=============================================")
             print("Inside Postback")
