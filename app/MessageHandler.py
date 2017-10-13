@@ -3,12 +3,14 @@ import json
 import praw
 import requests
 from googleplaces import GooglePlaces
-# import googlemaps
+import Quick_replies as qr
 import GoogleMapsHandler
 import Secret as s
 from RedditMessageHandler import send_message_reddit
 from Users import *
 from Utils import to_json
+import Buttons
+
 
 PAT =s.PAT
 
@@ -45,7 +47,15 @@ def handle_message_req(request, Users):
             print("Not Sure how to respond.")
             data = to_json({
                 "recipient": {"id": user.get_id()},
-                "message": {"text": "I don't understand."}})
+                "message": {"attachment":{
+                    "type":"template",
+                    "payload" : {
+                        "template_type":"button",
+                        "text":"Hi. Here are some of the things I can do for you!",
+                        "buttons": Buttons.button_list
+                    }
+                }
+                            }})
             messagerequestpost(PAT, data)
         return Users
 
@@ -75,11 +85,10 @@ def messaging_events(payload):
         if("message" in event and "quick_reply" in event["message"]):
             yield (event["sender"]["id"], event["message"]["quick_reply"]["payload"])
         if(event.get("postback")):
-            print("=============================================")
-            print("Inside Postback")
-            print("=============================================")
             if event["postback"]["payload"]=="Get Started":
                 yield(event["sender"]["id"],"Get Started")
+            else:
+                yield(event["sender"]["id"],event["postback"]["payload"])
         elif "message" in event and "text" in event["message"]:
             yield(event["sender"]["id"], event["message"]["text"].encode('unicode_escape'))
         elif (str(event['message']['attachments'][0]['type']) == 'location'):

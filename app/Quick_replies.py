@@ -6,20 +6,20 @@ ICONS={"Cafe": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToNsFOuxhp
 
 quick_replies_list_reddit = [{
     "content_type":"text",
-    "title":"Send Meme",
-    "payload":"meme",},{
+    "title":"Memes",
+    "payload":"Send Meme",},{
 
     "content_type":"text",
-    "title":"Send Doggos picture",
-    "payload":"dog",
+    "title":"Doggos",
+    "payload":"Send Doggos picture",
     },{
     "content_type":"text",
-    "title":"Send BlackPeopleTwitter pic",
-    "payload":"BlackPeopleTwitter",
+    "title":"BlackPeopleTwitter",
+    "payload":"Send BlackPeopleTwitter pic",
     },{
     "content_type":"text",
-    "title":"Send Dank Christian pic",
-    "payload":"DankChristian",
+    "title":"Dank Christian Memes",
+    "payload":"Send Dank Christian",
     }
 ]
 

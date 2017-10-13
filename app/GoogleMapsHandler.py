@@ -15,7 +15,7 @@ def handle_location(token, user, location):
                     }})
     MessageHandler.messagerequestpost(token, data)
 
-def handle_geosearch(token, recipient, text, client, amttodisplay = 3):
+def handle_geosearch(token, recipient, text, client, amttodisplay = 4):
     search_words= " ".join([tok for tok, pos in pos_tag(word_tokenize(text)) if pos.startswith('N') or pos.startswith('J')])
 
     query_result = client.nearby_search(
