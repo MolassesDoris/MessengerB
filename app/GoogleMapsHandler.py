@@ -6,6 +6,8 @@ import Secret as s
 from Utils import to_json
 from googlemaps import places as google_places
 import Quick_replies as qr
+import googlemaps
+
 def handle_location(token, user, location):
     user.setLocation(location)
     data = to_json({
@@ -22,18 +24,24 @@ def handle_geosearch(token, recipient, text, client, amttodisplay = 4):
         location='{},{}'.format(recipient.get_location().get_longitude(),
                                 recipient.get_location().get_latitude()),
         keyword=search_words, rankby="distance")
-
+    gmaps = googlemaps.Client(s.GAPI)
+    distmat = gmaps.distance_matrix(origins=[(recipient.get_location().get_longitude(),
+                                recipient.get_location().get_latitude())],
+                                    destinations=[(str(place.geo_location['lat']), str(place.geo_location['lng'])) for
+                                                  place in query_result.places], mode="walking")
+    timeanddur = distmat['rows'][0]['elements']
     if len(query_result.places) > 0:
         elements = []
         for indx, place in enumerate(query_result.places[:amttodisplay]):
             image_url = None
+            timeaway, disaway = timeanddur[indx]['duration']['text'].decode('utf-8'), timeanddur[indx]['distance']['text'].decode('utf-8')
             if (len(place.photos) > 0):
                 photo = place.photos[0]
                 photo.get(maxheight=500, maxwidth=500)
                 image_url = photo.url
             element = {"title": place.name.encode('utf-8'),
                        "image_url": image_url,
-                       "subtitle": ", ".join([type.replace("_"," ")for type in place.types]),
+                       "subtitle": "{} by walking. {}.".format(timeaway, disaway),
                        "buttons": [{"title": "Open in Maps",
                                     "type": "web_url",
                                     "url": place.url,
